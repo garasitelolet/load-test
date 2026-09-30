@@ -8,81 +8,80 @@
     <link rel="stylesheet" href="/web/styles.css" />
   </head>
   <body>
-    <!-- THESIS: A block-built control console turns nine performance test types into one deliberate run at a time, refusing the vague dashboard. OWN-WORLD: white cut blocks, blue voids, charcoal measurements, and a red saw line for destructive state. STORY: choose a load profile, configure the endpoint, and read the system's response in one glance. FIRST VIEWPORT: a left profile rail, central run sheet, and right live result column. FORM: profile rail plus run sheet, assigned direction 4, seed 15a054f8. FINISH: the run's exit condition, verbatim "unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md" -->
+    <!-- THESIS: A practical performance workspace puts live evidence before configuration so operators see the system while they shape its pressure. OWN-WORLD: a calm operations sidebar, white report surfaces, cobalt telemetry, and red only for failure. STORY: select a test, configure its duration and load, then watch the response form in real time. FIRST VIEWPORT: sidebar at left, live overview on top, test setup below. FORM: dashboard overview plus common application sidebar, assigned direction 4, seed 15a054f8. FINISH: the run's exit condition, verbatim "unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md" -->
     <main class="app-shell">
-      <header class="topbar">
-        <div class="brand-mark" aria-label="SIMAS performance console"><span>SIMAS</span><b>/</b><span>k6</span></div>
-        <div class="topbar-meta"><span class="status-dot"></span><span>LOCAL CONTROL ROOM</span><span class="mono" id="clock">--:--:--</span></div>
-      </header>
-
-      <section class="workspace">
-        <aside class="profile-rail" aria-labelledby="profile-title">
-          <div class="rail-heading">
-            <span class="section-label">01 / PROFILE</span>
-            <h1 id="profile-title">Choose a<br /><em>pressure shape.</em></h1>
-          </div>
+      <aside class="sidebar" aria-label="Main navigation">
+        <div class="sidebar-brand"><span class="brand-mark"><b>SIMAS</b><i>/</i>k6</span><span class="brand-caption">PERFORMANCE LAB</span></div>
+        <nav class="main-nav" aria-label="Workspace sections">
+          <a class="nav-link active" href="#overview"><span class="nav-icon overview-icon"></span>Overview</a>
+          <a class="nav-link" href="#test-setup"><span class="nav-icon run-icon"></span>Run test</a>
+          <a class="nav-link" href="#reports"><span class="nav-icon report-icon"></span>Reports</a>
+        </nav>
+        <div class="sidebar-section">
+          <div class="sidebar-section-heading"><span>TEST PROFILES</span><span class="profile-count">09</span></div>
           <div class="profile-list" id="profile-list"></div>
-          <div class="rail-note"><span class="line-mark"></span><span>One profile per run. Build the evidence in layers.</span></div>
-        </aside>
+        </div>
+        <div class="sidebar-footer"><span class="status-dot"></span><div><strong>Local runner</strong><small>k6 telemetry ready</small></div></div>
+      </aside>
 
-        <section class="run-sheet" aria-labelledby="run-title">
-          <div class="sheet-heading">
-            <div><span class="section-label">02 / RUN SHEET</span><h2 id="run-title">Load test</h2></div>
-            <span class="mode-badge" id="mode-badge">READY</span>
-          </div>
-          <p class="profile-description" id="profile-description"></p>
+      <section class="main-area">
+        <header class="topbar">
+          <div><span class="breadcrumb">WORKSPACE / PERFORMANCE</span><h1>Performance overview</h1></div>
+          <div class="topbar-actions"><span class="server-status"><span class="status-dot"></span>LOCAL CONTROL ROOM</span><span class="mono" id="clock">--:--:--</span></div>
+        </header>
 
-          <form id="run-form">
-            <fieldset>
-              <legend>Target surface</legend>
-              <label>Base URL<input name="baseUrl" type="url" value="http://localhost:3000" required /></label>
-              <label>Endpoint path<input name="path" type="text" value="/" required /></label>
-              <label>Method<select name="method"><option>GET</option><option>POST</option></select></label>
-            </fieldset>
-
-            <fieldset>
-              <legend>Pressure settings</legend>
-              <div class="field-grid">
-                <label>Target VUs<input name="targetVus" type="number" min="1" value="20" required /></label>
-                <label>Ramp up<input name="rampUp" type="text" value="1m" required /></label>
-                <label>Hold<input name="hold" type="text" value="3m" required /></label>
-                <label>Ramp down<input name="rampDown" type="text" value="1m" required /></label>
-                <label>Breakpoint VUs<input name="breakpointVus" type="number" min="1" value="200" /></label>
-                <label>Data size<input name="dataSize" type="number" min="1" value="1000" /></label>
-              </div>
-            </fieldset>
-
-            <div class="form-actions">
-              <button class="primary-button" type="submit" id="run-button">Run selected test</button>
-              <button class="stop-button" type="button" id="stop-button" disabled>Stop run</button>
+        <div class="content">
+          <section class="overview-card" id="overview" aria-labelledby="result-title">
+            <div class="overview-head">
+              <div><span class="section-label">LIVE TELEMETRY</span><h2 id="result-title">Waiting for a run</h2><p id="result-subtitle">Choose a test profile and start a run to see the system respond.</p></div>
+              <div class="overview-status"><span class="live-pill" id="live-pill">IDLE</span><span class="mode-badge" id="mode-badge">LOAD</span></div>
             </div>
-            <p class="form-hint">Thresholds: error rate &lt; 1% · p95 &lt; 1s · p99 &lt; 2s</p>
-          </form>
-        </section>
+            <div class="metrics" id="metrics">
+              <div class="metric"><span>p95 latency</span><strong id="metric-p95">—</strong><small>response time</small></div>
+              <div class="metric"><span>p99 latency</span><strong id="metric-p99">—</strong><small>response time</small></div>
+              <div class="metric"><span>request rate</span><strong id="metric-rate">—</strong><small>requests / second</small></div>
+              <div class="metric"><span>failed requests</span><strong id="metric-failed">—</strong><small>error ratio</small></div>
+            </div>
+            <div class="chart-wrap" id="chart-wrap">
+              <div class="chart-label"><span>LATENCY OVER TIME</span><span id="chart-range">Waiting for telemetry</span></div>
+              <div class="chart-stage"><canvas id="latency-chart" aria-label="Latency over time"></canvas><div class="chart-empty" id="chart-empty">No run data yet</div></div>
+            </div>
+            <div class="result-footer"><span id="run-elapsed">Ready for a test</span><a class="download-link" id="download-report" hidden download>Download JSON report</a></div>
+            <pre class="output" id="output" hidden></pre>
+          </section>
 
-        <aside class="result-column" aria-labelledby="result-title">
-          <div class="result-heading"><span class="section-label">03 / READOUT</span><span class="live-pill" id="live-pill">IDLE</span></div>
-          <h2 id="result-title">Waiting for a run</h2>
-          <div class="result-state" id="result-state">
-            <div class="state-graphic"><span></span><span></span><span></span></div>
-            <p>Select a profile, point it at an API, and start building a result.</p>
-          </div>
-          <div class="metrics" id="metrics" hidden>
-            <div class="metric"><span>p95 latency</span><strong id="metric-p95">—</strong></div>
-            <div class="metric"><span>p99 latency</span><strong id="metric-p99">—</strong></div>
-            <div class="metric"><span>request rate</span><strong id="metric-rate">—</strong></div>
-            <div class="metric"><span>failed requests</span><strong id="metric-failed">—</strong></div>
-          </div>
-          <div class="chart-wrap" id="chart-wrap" hidden>
-            <div class="chart-label"><span>LATENCY TRACE</span><span>ms / second</span></div>
-            <canvas id="latency-chart" aria-label="Latency over time"></canvas>
-          </div>
-          <a class="download-link" id="download-report" hidden download>Download JSON report</a>
-          <pre class="output" id="output" hidden></pre>
-        </aside>
+          <section class="setup-section" id="test-setup" aria-labelledby="setup-title">
+            <div class="section-heading"><div><span class="section-label">TEST SETUP</span><h2 id="setup-title">Configure your run</h2></div><span class="setup-note">One test at a time</span></div>
+            <form id="run-form" class="setup-grid">
+              <div class="setup-block target-block">
+                <div class="block-heading"><span class="block-number">01</span><div><h3>Target surface</h3><p>Where should k6 send traffic?</p></div></div>
+                <label>Base URL<input name="baseUrl" type="url" value="http://localhost:3000" required /></label>
+                <label>Endpoint path<input name="path" type="text" value="/" required /></label>
+                <label>Method<select name="method"><option>GET</option><option>POST</option></select></label>
+              </div>
+              <div class="setup-block pressure-block">
+                <div class="block-heading"><span class="block-number">02</span><div><h3>Load settings</h3><p>Define pressure and test duration.</p></div></div>
+                <div class="field-grid">
+                  <label>Target VUs<input name="targetVus" type="number" min="1" value="20" required /></label>
+                  <label>Duration<input name="duration" type="text" value="5m" required /><small>Example: 30s, 5m</small></label>
+                  <label>Ramp up<input name="rampUp" type="text" value="1m" required /></label>
+                  <label>Hold<input name="hold" type="text" value="3m" required /></label>
+                  <label>Ramp down<input name="rampDown" type="text" value="1m" required /></label>
+                  <label>Breakpoint VUs<input name="breakpointVus" type="number" min="1" value="200" /></label>
+                  <label>Data size<input name="dataSize" type="number" min="1" value="1000" /></label>
+                </div>
+              </div>
+              <div class="setup-actions">
+                <div><strong id="selected-test-label">Load test</strong><span id="profile-description">Measure the expected day-to-day load and establish a trustworthy baseline.</span></div>
+                <div class="form-actions"><button class="primary-button" type="submit" id="run-button">Run selected test</button><button class="stop-button" type="button" id="stop-button" disabled>Stop run</button></div>
+                <p class="form-hint">Thresholds: error rate &lt; 1% · p95 &lt; 1s · p99 &lt; 2s</p>
+              </div>
+            </form>
+          </section>
+          <section id="reports" class="reports-anchor" aria-label="Reports"><span>Reports are saved automatically after each completed run.</span></section>
+        </div>
+        <footer class="footer"><span>SIMAS PERFORMANCE LAB</span><span class="mono">v1.0 / k6 runner</span><span>Use staging unless production load is explicitly approved.</span></footer>
       </section>
-
-      <footer class="footer"><span>SIMAS PERFORMANCE LAB</span><span class="mono">v1.0 / k6 runner</span><span>Use staging unless production load is explicitly approved.</span></footer>
     </main>
     <script src="/web/app.js" type="module"></script>
   </body>

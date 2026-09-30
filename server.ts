@@ -28,6 +28,44 @@ function json(data: unknown, status = 200) {
   });
 }
 
+async function readLiveSeries(eventsPath: string) {
+  const series = { latency: [], vus: [] } as {
+    latency: Array<{ time: string; value: number }>;
+    vus: Array<{ time: string; value: number }>;
+  };
+  const buckets = new Map<string, { latency?: number; vus?: number }>();
+  const eventsFile = Bun.file(eventsPath);
+  if (!(await eventsFile.exists())) return { series, sampleCount: 0, lastLatency: undefined, activeVus: 0 };
+
+  for (const line of (await eventsFile.text()).split('\n')) {
+    if (!line) continue;
+    try {
+      const event = JSON.parse(line) as { type?: string; metric?: string; data?: { time?: string; value?: number } };
+      if (event.type !== 'Point' || !event.data?.time || !Number.isFinite(event.data.value)) continue;
+      const bucket = new Date(event.data.time).toISOString().slice(0, 19);
+      const current = buckets.get(bucket) || {};
+      if (event.metric === 'http_req_duration') current.latency = event.data.value;
+      if (event.metric === 'vus') current.vus = event.data.value;
+      buckets.set(bucket, current);
+    } catch {
+      // Ignore a partial final line while k6 is writing.
+    }
+  }
+
+  for (const [time, values] of buckets) {
+    if (values.latency !== undefined) series.latency.push({ time, value: values.latency });
+    if (values.vus !== undefined) series.vus.push({ time, value: values.vus });
+  }
+  const latency = series.latency;
+  const vus = series.vus;
+  return {
+    series,
+    sampleCount: latency.length,
+    lastLatency: latency.at(-1)?.value,
+    activeVus: vus.at(-1)?.value || 0
+  };
+}
+
 async function runK6(runId: string, payload: Record<string, string | number>) {
   if (!Bun.which('k6')) {
     throw new Error('k6 tidak ditemukan. Jalankan image Docker dengan `docker build -t simas-k6-console .` lalu `docker run --rm -p 3000:3000 -v "$PWD/reports:/app/reports" simas-k6-console`, atau pasang k6 dengan `brew install k6`.');
@@ -68,9 +106,17 @@ async function runK6(runId: string, payload: Record<string, string | number>) {
   });
   activeProcess = k6Process;
 
+  const liveTimer = setInterval(() => {
+    void readLiveSeries(eventsPath).then((live) => {
+      const run = runs.get(runId);
+      if (run?.status === 'running') run.live = live;
+    });
+  }, 700);
+
   const stdoutPromise = new Response(k6Process.stdout).text();
   const stderrPromise = new Response(k6Process.stderr).text();
   const exitCode = await k6Process.exited;
+  clearInterval(liveTimer);
   const [stdout, stderr] = await Promise.all([stdoutPromise, stderrPromise]);
   activeProcess = null;
 
