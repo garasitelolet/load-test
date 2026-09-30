@@ -82,12 +82,11 @@ function renderTelemetry(run) {
   const points = run.report?.series?.latency || live.series?.latency || [];
   document.querySelector('#metric-p95').textContent = formatMetric(duration['p(95)'] ?? live.lastLatency);
   document.querySelector('#metric-p99').textContent = formatMetric(duration['p(99)'] ?? live.lastLatency);
-  const elapsed = Math.max((Date.now() - new Date(run.startedAt).getTime()) / 1000, 1);
-  const rate = values.http_reqs?.values?.rate ?? (live.sampleCount ? live.sampleCount / elapsed : NaN);
+  const rate = values.http_reqs?.values?.rate ?? live.requestRate;
   document.querySelector('#metric-rate').textContent = Number.isFinite(rate) ? `${rate.toFixed(1)} req/s` : '—';
   document.querySelector('#metric-failed').textContent = Number.isFinite(failed) ? `${(failed * 100).toFixed(2)}%` : (run.status === 'running' ? 'LIVE' : '—');
   drawChart(points);
-  runElapsed.textContent = run.status === 'running' ? `Live · ${live.activeVus ?? 0} active VUs · ${live.sampleCount ?? 0} samples` : `Finished ${new Date(run.finishedAt).toLocaleTimeString('en-GB')}`;
+  runElapsed.textContent = run.status === 'running' ? `Live · ${live.activeVus ?? 0} active VUs · ${live.sampleCount ?? 0} requests` : `Finished ${new Date(run.finishedAt).toLocaleTimeString('en-GB')}`;
 }
 
 function showSummary(run) {

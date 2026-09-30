@@ -33,6 +33,8 @@ async function readLiveSeries(eventsPath: string) {
     latency: Array<{ time: string; value: number }>;
     vus: Array<{ time: string; value: number }>;
   };
+  let requestCount = 0;
+  const requestTimes: number[] = [];
   const buckets = new Map<string, { latency?: number; vus?: number }>();
   const eventsFile = Bun.file(eventsPath);
   if (!(await eventsFile.exists())) return { series, sampleCount: 0, lastLatency: undefined, activeVus: 0 };
@@ -44,7 +46,11 @@ async function readLiveSeries(eventsPath: string) {
       if (event.type !== 'Point' || !event.data?.time || !Number.isFinite(event.data.value)) continue;
       const bucket = new Date(event.data.time).toISOString().slice(0, 19);
       const current = buckets.get(bucket) || {};
-      if (event.metric === 'http_req_duration') current.latency = event.data.value;
+      if (event.metric === 'http_req_duration') {
+        requestCount += 1;
+        requestTimes.push(new Date(event.data.time).getTime());
+        current.latency = event.data.value;
+      }
       if (event.metric === 'vus') current.vus = event.data.value;
       buckets.set(bucket, current);
     } catch {
@@ -58,11 +64,17 @@ async function readLiveSeries(eventsPath: string) {
   }
   const latency = series.latency;
   const vus = series.vus;
+  const latestRequestTime = requestTimes.at(-1) || Date.now();
+  const windowStart = latestRequestTime - 5000;
+  const recentRequests = requestTimes.filter((time) => time >= windowStart).length;
+  const requestRate = recentRequests / Math.max((latestRequestTime - (requestTimes[0] || latestRequestTime)) / 1000, 5);
   return {
     series,
-    sampleCount: latency.length,
+    sampleCount: requestCount,
+    chartPoints: latency.length,
     lastLatency: latency.at(-1)?.value,
-    activeVus: vus.at(-1)?.value || 0
+    activeVus: vus.at(-1)?.value || 0,
+    requestRate
   };
 }
 
@@ -85,6 +97,7 @@ async function runK6(runId: string, payload: Record<string, string | number>) {
     RAMP_UP: String(payload.rampUp),
     HOLD: String(payload.hold),
     RAMP_DOWN: String(payload.rampDown),
+    THINK_TIME: String(payload.thinkTime ?? 1),
     DATA_SIZE: String(payload.dataSize || 1000),
     BREAKPOINT_VUS: String(payload.breakpointVus || 200)
   };
