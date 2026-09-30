@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SIMAS k6 performance testing console" />
+    <title>SIMAS / k6 Console</title>
+    <link rel="stylesheet" href="/web/styles.css" />
+  </head>
+  <body>
+    <!-- THESIS: A block-built control console turns nine performance test types into one deliberate run at a time, refusing the vague dashboard. OWN-WORLD: white cut blocks, blue voids, charcoal measurements, and a red saw line for destructive state. STORY: choose a load profile, configure the endpoint, and read the system's response in one glance. FIRST VIEWPORT: a left profile rail, central run sheet, and right live result column. FORM: profile rail plus run sheet, assigned direction 4, seed 15a054f8. FINISH: the run's exit condition, verbatim "unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md" -->
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand-mark" aria-label="SIMAS performance console"><span>SIMAS</span><b>/</b><span>k6</span></div>
+        <div class="topbar-meta"><span class="status-dot"></span><span>LOCAL CONTROL ROOM</span><span class="mono" id="clock">--:--:--</span></div>
+      </header>
+
+      <section class="workspace">
+        <aside class="profile-rail" aria-labelledby="profile-title">
+          <div class="rail-heading">
+            <span class="section-label">01 / PROFILE</span>
+            <h1 id="profile-title">Choose a<br /><em>pressure shape.</em></h1>
+          </div>
+          <div class="profile-list" id="profile-list"></div>
+          <div class="rail-note"><span class="line-mark"></span><span>One profile per run. Build the evidence in layers.</span></div>
+        </aside>
+
+        <section class="run-sheet" aria-labelledby="run-title">
+          <div class="sheet-heading">
+            <div><span class="section-label">02 / RUN SHEET</span><h2 id="run-title">Load test</h2></div>
+            <span class="mode-badge" id="mode-badge">READY</span>
+          </div>
+          <p class="profile-description" id="profile-description"></p>
+
+          <form id="run-form">
+            <fieldset>
+              <legend>Target surface</legend>
+              <label>Base URL<input name="baseUrl" type="url" value="http://localhost:3000" required /></label>
+              <label>Endpoint path<input name="path" type="text" value="/" required /></label>
+              <label>Method<select name="method"><option>GET</option><option>POST</option></select></label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Pressure settings</legend>
+              <div class="field-grid">
+                <label>Target VUs<input name="targetVus" type="number" min="1" value="20" required /></label>
+                <label>Ramp up<input name="rampUp" type="text" value="1m" required /></label>
+                <label>Hold<input name="hold" type="text" value="3m" required /></label>
+                <label>Ramp down<input name="rampDown" type="text" value="1m" required /></label>
+                <label>Breakpoint VUs<input name="breakpointVus" type="number" min="1" value="200" /></label>
+                <label>Data size<input name="dataSize" type="number" min="1" value="1000" /></label>
+              </div>
+            </fieldset>
+
+            <div class="form-actions">
+              <button class="primary-button" type="submit" id="run-button">Run selected test</button>
+              <button class="stop-button" type="button" id="stop-button" disabled>Stop run</button>
+            </div>
+            <p class="form-hint">Thresholds: error rate &lt; 1% · p95 &lt; 1s · p99 &lt; 2s</p>
+          </form>
+        </section>
+
+        <aside class="result-column" aria-labelledby="result-title">
+          <div class="result-heading"><span class="section-label">03 / READOUT</span><span class="live-pill" id="live-pill">IDLE</span></div>
+          <h2 id="result-title">Waiting for a run</h2>
+          <div class="result-state" id="result-state">
+            <div class="state-graphic"><span></span><span></span><span></span></div>
+            <p>Select a profile, point it at an API, and start building a result.</p>
+          </div>
+          <div class="metrics" id="metrics" hidden>
+            <div class="metric"><span>p95 latency</span><strong id="metric-p95">—</strong></div>
+            <div class="metric"><span>p99 latency</span><strong id="metric-p99">—</strong></div>
+            <div class="metric"><span>request rate</span><strong id="metric-rate">—</strong></div>
+            <div class="metric"><span>failed requests</span><strong id="metric-failed">—</strong></div>
+          </div>
+          <div class="chart-wrap" id="chart-wrap" hidden>
+            <div class="chart-label"><span>LATENCY TRACE</span><span>ms / second</span></div>
+            <canvas id="latency-chart" aria-label="Latency over time"></canvas>
+          </div>
+          <a class="download-link" id="download-report" hidden download>Download JSON report</a>
+          <pre class="output" id="output" hidden></pre>
+        </aside>
+      </section>
+
+      <footer class="footer"><span>SIMAS PERFORMANCE LAB</span><span class="mono">v1.0 / k6 runner</span><span>Use staging unless production load is explicitly approved.</span></footer>
+    </main>
+    <script src="/web/app.js" type="module"></script>
+  </body>
+</html>
