@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import PDFDocument from 'pdfkit';
 
 const root = import.meta.dir;
 const port = Number(process.env.PORT || 3000);
@@ -25,6 +26,58 @@ function json(data: unknown, status = 200) {
   return Response.json(data, {
     status,
     headers: { 'Cache-Control': 'no-store' }
+  });
+}
+
+function createPdfReport(report: Record<string, unknown>) {
+  return new Promise<Uint8Array>((resolve, reject) => {
+    const document = new PDFDocument({ size: 'A4', margin: 48 });
+    const chunks: Buffer[] = [];
+    document.on('data', (chunk: Buffer) => chunks.push(chunk));
+    document.on('end', () => resolve(Buffer.concat(chunks)));
+    document.on('error', reject);
+
+    const summary = (report.summary || {}) as { metrics?: Record<string, { values?: Record<string, number> }> };
+    const metrics = summary.metrics || {};
+    const duration = metrics.http_req_duration?.values || {};
+    const requests = metrics.http_reqs?.values || {};
+    const failed = metrics.http_req_failed?.values?.rate;
+    const config = (report.config || {}) as Record<string, string | number>;
+    const series = ((report.series || {}) as { latency?: Array<{ value: number }> }).latency || [];
+
+    document.fontSize(22).fillColor('#18202a').text('SIMAS / k6 Performance Report');
+    document.moveDown(.35).fontSize(10).fillColor('#718091').text(`Generated ${new Date(String(report.finishedAt)).toLocaleString('id-ID')}`);
+    document.moveDown(1).fontSize(13).fillColor('#2868e8').text(`${String(report.testType || 'performance').toUpperCase()} TEST`);
+    document.moveDown(.5).fontSize(10).fillColor('#18202a').text(`Target: ${String(config.baseUrl || '')}${String(config.path || '')}`);
+    document.text(`Duration: ${String(config.duration || '-') } · Target VUs: ${String(config.targetVus || '-') } · Think time: ${String(config.thinkTime || '0')}s`);
+
+    document.moveDown(1).fontSize(12).fillColor('#18202a').text('Performance summary');
+    const summaryRows = [
+      ['p95 latency', `${Math.round(duration['p(95)'] || 0)} ms`],
+      ['p99 latency', `${Math.round(duration['p(99)'] || 0)} ms`],
+      ['request rate', `${(requests.rate || 0).toFixed(2)} req/s`],
+      ['failed requests', `${((failed || 0) * 100).toFixed(2)}%`]
+    ];
+    summaryRows.forEach(([label, value]) => document.fontSize(10).fillColor('#718091').text(label, 48, document.y + 8).fillColor('#18202a').text(value, 190, document.y - 10));
+
+    document.moveDown(2).fontSize(12).fillColor('#18202a').text('Latency over time');
+    const chartX = 48; const chartY = document.y + 14; const chartWidth = 500; const chartHeight = 180;
+    document.rect(chartX, chartY, chartWidth, chartHeight).fillAndStroke('#f5f8fc', '#dce3ea');
+    if (series.length > 1) {
+      const values = series.map((point) => point.value); const max = Math.max(...values, 1); const min = Math.min(...values, 0); const range = Math.max(max - min, 1);
+      document.moveTo(chartX, chartY + chartHeight - 15);
+      series.forEach((point, index) => {
+        const x = chartX + (index / (series.length - 1)) * chartWidth;
+        const y = chartY + chartHeight - 15 - ((point.value - min) / range) * (chartHeight - 30);
+        if (index === 0) document.moveTo(x, y); else document.lineTo(x, y);
+      });
+      document.lineWidth(2).strokeColor('#2868e8').stroke();
+      document.fontSize(8).fillColor('#718091').text(`min ${Math.round(min)} ms`, chartX, chartY + chartHeight + 7);
+      document.text(`max ${Math.round(max)} ms`, chartX + chartWidth - 70, chartY + chartHeight + 7);
+    } else {
+      document.fontSize(9).fillColor('#718091').text('No latency series available.', chartX + 12, chartY + chartHeight / 2);
+    }
+    document.end();
   });
 }
 
@@ -182,6 +235,8 @@ async function runK6(runId: string, payload: Record<string, string | number>) {
     series
   };
   await Bun.write(reportPath, JSON.stringify(report, null, 2));
+  const pdfPath = join(reportsDir, `${runId}.pdf`);
+  await Bun.write(pdfPath, await createPdfReport(report));
 
   const run = runs.get(runId);
   if (run) {
@@ -191,6 +246,7 @@ async function runK6(runId: string, payload: Record<string, string | number>) {
     run.output = (stderr || stdout).trim().slice(-5000);
     run.report = report;
     run.reportUrl = `/api/report?id=${runId}`;
+    run.pdfUrl = `/api/report/pdf?id=${runId}`;
     run.finishedAt = new Date().toISOString();
   }
 }
@@ -246,6 +302,14 @@ const server = Bun.serve({
       return (await reportFile.exists())
         ? new Response(reportFile, { headers: { 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="${runId}.json"` } })
         : json({ error: 'Report not found.' }, 404);
+    }
+
+    if (url.pathname === '/api/report/pdf' && request.method === 'GET') {
+      const runId = url.searchParams.get('id') || '';
+      const reportFile = Bun.file(join(reportsDir, `${runId}.pdf`));
+      return (await reportFile.exists())
+        ? new Response(reportFile, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${runId}.pdf"` } })
+        : json({ error: 'PDF report not found.' }, 404);
     }
 
     if (url.pathname === '/api/stop' && request.method === 'POST') {

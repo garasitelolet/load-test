@@ -13,7 +13,7 @@ bun run dev
 
 GUI menyediakan `load`, `stress`, `spike`, `soak/endurance`, `volume`, `scalability`, `capacity`, `concurrency`, dan `breakpoint` test. Isi URL service serta endpoint, pilih satu profil, lalu tekan **Run selected test**. Hanya satu run yang dapat aktif pada satu waktu; tombol **Stop run** menghentikan proses k6 yang sedang berjalan.
 
-Setiap run menyimpan summary k6 dan time-series latency ke folder `reports/`. GUI menampilkan p95, p99, request rate, error rate, grafik latency per detik, dan tombol **Download JSON report**.
+Setiap run menyimpan summary k6 dan time-series latency ke folder `reports/`. GUI menampilkan p95, p99, request rate, error rate, grafik latency per detik, serta tombol **JSON report** dan **PDF report**. PDF memakai data summary dan grafik yang sama dengan GUI.
 
 ## Docker
 

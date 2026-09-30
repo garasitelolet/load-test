@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "description": "Performance tests for SIMAS APIs using k6",
+  "dependencies": {
+    "pdfkit": "^0.16.0"
+  },
   "scripts": {
     "dev": "bun run server.ts",
     "start": "bun run server.ts",

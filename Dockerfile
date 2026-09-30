@@ -4,6 +4,8 @@ FROM oven/bun:1-slim
 WORKDIR /app
 
 COPY --from=k6 /usr/bin/k6 /usr/local/bin/k6
+COPY package.json bun.lock ./
+RUN bun install --production --frozen-lockfile
 COPY server.ts ./server.ts
 COPY tests ./tests
 COPY web ./web

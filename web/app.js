@@ -22,6 +22,7 @@ const chart = document.querySelector('#latency-chart');
 const chartEmpty = document.querySelector('#chart-empty');
 const chartRange = document.querySelector('#chart-range');
 const downloadReport = document.querySelector('#download-report');
+const downloadPdf = document.querySelector('#download-pdf');
 const output = document.querySelector('#output');
 const clock = document.querySelector('#clock');
 const runElapsed = document.querySelector('#run-elapsed');
@@ -98,6 +99,7 @@ function showSummary(run) {
   livePill.textContent = run.status === 'completed' ? 'PASS' : 'FAIL';
   livePill.className = `live-pill ${run.status === 'completed' ? 'success' : 'danger'}`;
   if (run.reportUrl) { downloadReport.href = run.reportUrl; downloadReport.hidden = false; }
+  if (run.pdfUrl) { downloadPdf.href = run.pdfUrl; downloadPdf.hidden = false; }
 }
 
 async function pollStatus() {
@@ -112,7 +114,7 @@ async function pollStatus() {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const values = Object.fromEntries(new FormData(form)); values.testType = selected;
-  setRunning(true); resultTitle.textContent = 'Starting test'; resultSubtitle.textContent = 'Preparing k6 telemetry…'; output.hidden = true; downloadReport.hidden = true;
+  setRunning(true); resultTitle.textContent = 'Starting test'; resultSubtitle.textContent = 'Preparing k6 telemetry…'; output.hidden = true; downloadReport.hidden = true; downloadPdf.hidden = true;
   try {
     const response = await fetch('/api/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) });
     const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Unable to start test.'); activeRunId = data.runId; pollStatus();
